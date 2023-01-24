@@ -1,0 +1,50 @@
+syntax = "proto3";
+package sgn.gateway.v1;
+
+// minimal gateway proto for executor, to avoid too many dependencies
+
+option go_package = "github.com/celer-network/im-executor/types";
+
+service Web {
+  rpc InitWithdraw (InitWithdrawRequest) returns (InitWithdrawResponse) {}
+  rpc InitPegRefund (InitPegRefundRequest) returns (InitPegRefundResponse) {}
+}
+
+message InitPegRefundRequest {
+  bytes ref_id = 1;
+}
+
+message InitPegRefundResponse {
+  ErrMsg err = 1;
+}
+
+message InitWithdrawRequest {
+  bytes withdraw_req = 1;  // serialized WithdrawReq in sgn/cbridge/v1/tx.proto
+  bytes sig = 2; // empty if for contract
+}
+
+message InitWithdrawResponse {
+  ErrMsg err = 1;
+}
+
+message ErrMsg {
+  ErrCode code = 1;
+  string msg = 2;
+}
+
+enum ErrCode {
+  ERROR_CODE_UNDEFINED = 0;
+  ERROR_CODE_COMMON = 500;
+  ERROR_NO_TOKEN_ON_DST_CHAIN = 1001;
+  ERROR_NO_TOKEN_ON_SRC_CHAIN = 1002;
+  ERROR_INIT_WITHDRAW_FAILED = 1003;
+  ERROR_CODE_NO_ENOUGH_TOKEN_ON_DST_CHAIN = 1004;
+  ERROR_CODE_INBOUND_LIQUIDITY_LIMIT = 1005;
+  ERROR_CODE_DB_ERR = 1006;
+  ERROR_CODE_INVALID_TIME_PARAM = 1007;
+  ERROR_CODE_TRANSFER_REF_ID_NOT_FOUND = 1008;
+  ERROR_CODE_TRANSFER_DISABLED = 1009;
+  ERROR_CODE_LIQ_RM_DISABLED = 1010;
+  ERROR_CODE_LIQ_AGG_RM_SRC_DISABLED = 1011;
+  ERROR_CODE_BAD_LIQ_SLIPPAGE = 1012;
+}
