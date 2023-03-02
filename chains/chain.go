@@ -107,6 +107,14 @@ func GetChainMustExist(chid uint64) *Chain {
 	return chain
 }
 
+func GetChainIDs() []uint64 {
+	var ids []uint64;
+	for _, chain := range chains.chains {
+		ids = append(ids, chain.ChainID)
+	}
+	return ids
+}
+
 func StartMonitoring(filters contracts.ReceiverContracts, signers map[uint64][]eth.Addr) {
 	for _, chain := range chains.chains {
 		go chain.startMonitoringEvents(filters)

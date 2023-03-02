@@ -100,7 +100,7 @@ func (c ReceiverContracts) String() string {
 
 func (c ReceiverContracts) Validate() error {
 	if len(c) == 0 {
-		return fmt.Errorf("empty executor contract filter")
+		log.Warnf("empty executor contract filter")
 	}
 	log.Infoln("executor will submit execution for these contracts:")
 	for _, f := range c {

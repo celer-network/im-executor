@@ -74,7 +74,8 @@ func (e *Executor) startFetchingExecCtxsFromSgn() {
 	log.Infoln("Start fetching execution contexts from SGN")
 	for {
 		time.Sleep(8 * time.Second)
-		execCtxs, err := e.sgn.GetExecutionContexts(e.accounts.ReceiverContracts())
+		// get all execution contexts for any enabled chain
+		execCtxs, err := e.sgn.GetExecutionContexts()
 		if err != nil {
 			log.Errorln("failed to get messages", err)
 			continue
@@ -85,6 +86,10 @@ func (e *Executor) startFetchingExecCtxsFromSgn() {
 		log.Tracef("Got %d execution contexts", len(execCtxs))
 		execCtxsToSave := []*msgtypes.ExecutionContext{}
 		for i := range execCtxs {
+			// TODO: process only messages to or from target chain, e.g., sapphire testnet (0x5aff)
+			//if execCtxs[i].Message.SrcChainId == 0x5aff || execCtxs[i].Message.DstChainId == 0x5aff {
+			//	execCtxsToSave = append(execCtxsToSave, &execCtxs[i])
+			//}
 			execCtxsToSave = append(execCtxsToSave, &execCtxs[i])
 		}
 		db.SaveExecutionContexts(execCtxsToSave)
@@ -277,12 +282,11 @@ func (e *Executor) DelayedMessageToExecution(delayedMessages []*dal.DelayedMessa
 func (e *Executor) newExecution(msgId common.Hash, sender, receiver *contracts.ContractAddress, chain *chains.Chain, record *models.ExecutionRecord, delayedMessage *dal.DelayedMessage, gasLimit uint64) (*Execution, error) {
 	acc, ok := e.accounts.AccountByReceiver(receiver)
 	if !ok {
-		if record != nil {
-			dal.GetDB().UpdateStatus(msgId.Bytes(), types.ExecutionStatus_Ignored)
-		} else {
-			dal.GetDB().UpdateDelayStatus(msgId, types.ExecutionStatus_Ignored)
+		// get the default account
+		acc, ok = e.accounts.AccountByID("")
+		if !ok {
+			return nil, fmt.Errorf("no account configured")
 		}
-		return nil, fmt.Errorf("ignoring message/delayed-message with id/delayId %x: cannot find account by receiver %s", msgId, receiver)
 	}
 	allowed := acc.IsSenderAllowed(sender, receiver)
 	if !allowed {
@@ -297,10 +301,7 @@ func (e *Executor) newExecution(msgId common.Hash, sender, receiver *contracts.C
 	if !ok {
 		return nil, fmt.Errorf("transactor not registered for chainId %d", chain.ChainID)
 	}
-	recvContract, ok := acc.ReceiverContract(receiver)
-	if !ok {
-		return nil, fmt.Errorf("receiver contract not registered for %s", receiver)
-	}
+	recvContract, _ := acc.ReceiverContract(receiver)
 	bal, err := chain.EthClient.PendingBalanceAt(context.Background(), acc.Address)
 	if err != nil {
 		log.Debugf("failed to query balance for account %s on chain %d", acc.ID, chain.ChainID)

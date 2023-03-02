@@ -40,7 +40,9 @@ func (e *Executor) executeMessage(x *Execution) {
 	tx, err := x.Transactor.Transact(
 		newTransactionCallback(id, "execute message"),
 		func(transactor bind.ContractTransactor, opts *bind.TransactOpts) (*gethtypes.Transaction, error) {
-			setValue(opts, x.Receiver.PayableValue)
+			if x.Receiver != nil {
+				setValue(opts, x.Receiver.PayableValue)
+			}
 			method := func() (*gethtypes.Transaction, error) {
 				return x.ExecuteMessage(opts, msg, route, sigs, signers, powers)
 			}
@@ -73,7 +75,9 @@ func (e *Executor) executeDelayedMessage(x *Execution) {
 	tx, err := x.Transactor.Transact(
 		newDelayTransactionCallback(delayId, "execute delayed message"),
 		func(transactor bind.ContractTransactor, opts *bind.TransactOpts) (*gethtypes.Transaction, error) {
-			setValue(opts, x.Receiver.PayableValue)
+			if x.Receiver != nil {
+				setValue(opts, x.Receiver.PayableValue)
+			}
 			method := func() (*gethtypes.Transaction, error) {
 				return x.ExecuteDelayedMessage(opts, dm.Adapter, dm.SrcContract, dm.SrcChainID, dm.DstContract, dm.Calldata, dm.Nonce)
 			}
@@ -128,7 +132,9 @@ func (e *Executor) executeMessageWithTransfer(x *Execution) {
 	tx, err := x.Transactor.Transact(
 		newTransactionCallback(id, "execute message with transfer"),
 		func(transactor bind.ContractTransactor, opts *bind.TransactOpts) (*gethtypes.Transaction, error) {
-			setValue(opts, x.Receiver.PayableValue)
+			if x.Receiver != nil {
+				setValue(opts, x.Receiver.PayableValue)
+			}
 			method := func() (*gethtypes.Transaction, error) {
 				return x.Chain.MessageBus.ExecuteMessageWithTransfer(opts, msg, xfer, sigs, signers, powers)
 			}

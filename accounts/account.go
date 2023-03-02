@@ -23,8 +23,8 @@ func newAccount(conf *AccountConfig) *Account {
 	transactors := make(map[uint64]*ethutils.Transactor)
 	signers := make(map[uint64]ethutils.Signer)
 	address := eth.ZeroAddr
-	for _, contract := range conf.ReceiverContracts {
-		chain := chains.GetChainMustExist(contract.ChainId)
+	for _, id := range chains.GetChainIDs() {
+		chain := chains.GetChainMustExist(id)
 		if _, ok := transactors[chain.ChainID]; !ok {
 			transactor, signer := newTransactor(chain, conf.Keystore, conf.Passphrase)
 			transactors[chain.ChainID] = transactor
@@ -32,6 +32,7 @@ func newAccount(conf *AccountConfig) *Account {
 			address = transactor.Address()
 		}
 	}
+
 	err := conf.SenderGroups.Validate()
 	if err != nil {
 		log.Fatalf("cannot initialize account: %s", err.Error())
@@ -77,7 +78,8 @@ func (a *Account) IsSenderAllowed(sender, receiver *contracts.ContractAddress) b
 	}
 	recvContract, ok := a.ReceiverContract(receiver)
 	if !ok {
-		log.Errorf("unable to check sender, receiver contract %s not found", receiver)
+		log.Warnf("unable to check sender, receiver contract %s not found", receiver)
+		return true
 	}
 	// if no allowed sender groups are configured, it is defaulted to allowed
 	if len(recvContract.AllowSenderGroups) == 0 {

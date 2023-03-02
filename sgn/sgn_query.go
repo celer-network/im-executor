@@ -4,18 +4,29 @@ import (
 	"context"
 
 	"github.com/celer-network/goutils/log"
-	"github.com/celer-network/im-executor/contracts"
+	"github.com/celer-network/im-executor/chains"
 	"github.com/celer-network/im-executor/sgn-v2/eth"
+	comtypes "github.com/celer-network/im-executor/sgn-v2/common/types"
 	cbrtypes "github.com/celer-network/im-executor/sgn-v2/x/cbridge/types"
 	msgtypes "github.com/celer-network/im-executor/sgn-v2/x/message/types"
 	pegbrtypes "github.com/celer-network/im-executor/sgn-v2/x/pegbridge/types"
 	"github.com/celer-network/im-executor/types"
 )
 
-func (c *SgnClient) GetExecutionContexts(filters contracts.ReceiverContracts) ([]msgtypes.ExecutionContext, error) {
+func (c *SgnClient) GetExecutionContexts() ([]msgtypes.ExecutionContext, error) {
 	qc := msgtypes.NewQueryClient(c.grpcConn)
+
+	// filter execution contexts for all supported chains
+	filter := []*comtypes.ContractInfo{}
+	for _, id := range chains.GetChainIDs() {
+		info := &comtypes.ContractInfo{
+			ChainId: id,
+		}
+		filter = append(filter, info)
+	}
+
 	req := &msgtypes.QueryExecutionContextsRequest{
-		ContractInfos: filters.ContractInfoList(),
+		ContractInfos: filter,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), types.GatewayTimeout)
 	defer cancel()
