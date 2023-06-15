@@ -3,10 +3,10 @@ module github.com/celer-network/im-executor
 go 1.18
 
 require (
-	github.com/celer-network/endpoint-proxy v0.2.11
-	github.com/celer-network/goutils v0.1.56
+	github.com/celer-network/endpoint-proxy v0.2.13
+	github.com/celer-network/goutils v0.1.57
 	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/ethereum/go-ethereum v1.10.18
+	github.com/ethereum/go-ethereum v1.10.19
 	github.com/gammazero/deque v0.1.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/miguelmota/go-solidity-sha3 v0.1.1
@@ -123,9 +123,9 @@ require (
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/zondax/hid v0.9.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d // indirect
+	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
