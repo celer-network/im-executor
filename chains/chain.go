@@ -135,7 +135,7 @@ func newEthClient(config *OneChainConfig) *ethclient.Client {
 	var ec *ethclient.Client
 	var err error
 	if config.ProxyPort > 0 {
-		proxyPort := config.ProxyPort + 600
+		proxyPort := config.ProxyPort
 		if err = endpointproxy.StartProxy(config.Gateway, config.ChainID, proxyPort); err != nil {
 			log.Fatalln("can not start proxy for chain:", config.ChainID, "gateway:", config.Gateway, "port:", proxyPort, "err:", err)
 		}

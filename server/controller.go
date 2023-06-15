@@ -49,17 +49,22 @@ func (s *RestServer) handleUnstuckTx(r *models.UnstuckTxRequest) (*models.Unstuc
 }
 
 func (s *RestServer) handleRevertExecutionStatus(r *models.RevertExecutionStatusRequest) (*models.RevertExecutionStatusResponse, error) {
-	log.Infof("handle /revert-execution-status, req: %v", r)
+	log.Infof("handle /revert-execution-status, req: %+v", r)
 	if r.ID != "" || r.DstTx != "" {
 		query := &dal.ExecutionRecordQuery{
 			ID:    eth.Hex2Bytes(r.ID),
 			DstTx: r.DstTx,
 		}
 		err := s.executorSvc.RevertToLastExecutableStatus(query)
+		if err != nil {
+			log.Errorf("failed to revert execution status for query %+v: %s", r, err.Error())
+		}
 		return &models.RevertExecutionStatusResponse{}, err
-	}
-	if r.SrcTx != "" {
+	} else if r.SrcTx != "" {
 		err := s.executorSvc.RevertToLastExecutableStatusBySrcTx(r.SrcTx)
+		if err != nil {
+			log.Errorf("failed to revert execution status for srcTx %s: %s", r.SrcTx, err.Error())
+		}
 		return &models.RevertExecutionStatusResponse{}, err
 	}
 	return nil, fmt.Errorf("one of id, srcTx, or dstTx is required")

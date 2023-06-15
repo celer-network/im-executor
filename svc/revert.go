@@ -12,6 +12,9 @@ func (s *ExecutorService) RevertToLastExecutableStatus(query *dal.ExecutionRecor
 	if err != nil {
 		return err
 	}
+	if r == nil {
+		return fmt.Errorf("execution record not found with query %+v", query)
+	}
 	err = s.db.RevertStatus(r.ID.Bytes(), r.GetLastExecutableStatus())
 	if err != nil {
 		return fmt.Errorf("failed to revert status: %s", err)
@@ -23,6 +26,9 @@ func (s *ExecutorService) RevertToLastExecutableStatusBySrcTx(srcTx string) erro
 	records, err := s.db.GetExecutionRecords(&dal.ExecutionRecordsQuery{SrcTx: srcTx})
 	if err != nil {
 		return err
+	}
+	if len(records) == 0 {
+		return fmt.Errorf("execution records not found with srcTx %s", srcTx)
 	}
 	for _, r := range records {
 		err = s.db.RevertStatus(r.ID.Bytes(), r.GetLastExecutableStatus())

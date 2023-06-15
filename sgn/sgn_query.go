@@ -12,10 +12,11 @@ import (
 	"github.com/celer-network/im-executor/types"
 )
 
-func (c *SgnClient) GetExecutionContexts(filters contracts.ReceiverContracts) ([]msgtypes.ExecutionContext, error) {
+func (c *SgnClient) GetExecutionContexts(filters contracts.ReceiverContracts, ignoreRefundSigs bool) ([]msgtypes.ExecutionContext, error) {
 	qc := msgtypes.NewQueryClient(c.grpcConn)
 	req := &msgtypes.QueryExecutionContextsRequest{
-		ContractInfos: filters.ContractInfoList(),
+		ContractInfos:    filters.ContractInfoList(),
+		IgnoreRefundSigs: ignoreRefundSigs,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), types.GatewayTimeout)
 	defer cancel()
@@ -101,7 +102,15 @@ func (c *SgnClient) GetMessage(messageId string) (*msgtypes.Message, error) {
 	defer cancel()
 	res, err := qc.Message(ctx, req)
 	if err != nil {
-		return &msgtypes.Message{}, err
+		return nil, err
 	}
 	return &res.Message, nil
+}
+
+func (c *SgnClient) GetExecutionContext(messageId string) (*msgtypes.QueryExecutionContextByMsgIdResponse, error) {
+	qc := msgtypes.NewQueryClient(c.grpcConn)
+	req := &msgtypes.QueryExecutionContextByMsgIdRequest{MessageId: messageId, IgnoreSigs: false}
+	ctx, cancel := context.WithTimeout(context.Background(), types.GatewayTimeout)
+	defer cancel()
+	return qc.ExecutionContextByMsgId(ctx, req)
 }
