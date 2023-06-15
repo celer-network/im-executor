@@ -1,13 +1,10 @@
 package executor
 
 import (
-	"strings"
-	"time"
-
 	"github.com/celer-network/goutils/log"
 	"github.com/celer-network/im-executor/dal"
 	"github.com/celer-network/im-executor/types"
-	"github.com/ethereum/go-ethereum/common"
+	"strings"
 )
 
 const MSG_ABORT_PREFIX = "MSG::ABORT:"
@@ -28,25 +25,6 @@ func handleExecuteMessageError(err error, id []byte) {
 	// uncaught failures
 	log.Errorf("cannot execute message (id %x): %s", id, err.Error())
 	db.IncrAttemptAndRevert(id, types.ExecutionStatus_Unexecuted)
-}
-
-func handleExecuteDelayedMessageError(err error, id common.Hash, deadline time.Time) {
-	db := dal.GetDB()
-	// case 1: delayed message not exist
-	if strings.Contains(err.Error(), "delayed message not exist") {
-		log.Infof("delayed message (delayId %x) not exist", id)
-		db.UpdateDelayStatus(id, types.ExecutionStatus_Ignored)
-		return
-	}
-	// case 2: delayed message still locked
-	if strings.Contains(err.Error(), "delayed message still locked") {
-		log.Infof("delayed message (delayId %x) still locked", id)
-		db.UpdateDelayDeadlineAndRevert(id, deadline)
-		return
-	}
-	// uncaught failures
-	log.Errorf("cannot execute delayed message (delayId %x): %s", id, err.Error())
-	db.IncrDelayAttemptAndRevert(id, types.ExecutionStatus_Delayed)
 }
 
 func handleExecuteMessageWithTransferError(err error, id []byte) {

@@ -3,13 +3,11 @@ package chains
 import (
 	"context"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/celer-network/goutils/eth/mon2"
 	"github.com/celer-network/goutils/log"
 	"github.com/celer-network/im-executor/alert"
-	"github.com/celer-network/im-executor/bindings"
 	"github.com/celer-network/im-executor/contracts"
 	"github.com/celer-network/im-executor/dal"
 	"github.com/celer-network/im-executor/sgn-v2/eth"
@@ -21,7 +19,6 @@ import (
 
 func (c *Chain) startMonitoringEvents(filters contracts.ReceiverContracts) {
 	c.monitorBusExecuted(filters)
-	c.monitorMsgRecvAdapters()
 }
 
 func (c *Chain) monitorBusExecuted(filters contracts.ReceiverContracts) {
@@ -67,80 +64,6 @@ func (c *Chain) monitorBusExecuted(filters contracts.ReceiverContracts) {
 			log.Errorf("failed to update execution_context %x: %v", e.MsgId[:], err)
 		}
 	})
-}
-
-func (c *Chain) monitorMsgRecvAdapters() {
-	dal.DelayPeriods[c.ChainID] = make(map[eth.Addr]*atomic.Uint64)
-	for addr, adapter := range c.Contracts.MsgRecvAdapters {
-		// init delay period
-		delayPeriod, err := adapter.DelayPeriod(nil)
-		if err != nil {
-			log.Errorf("cannot get delay period of %x on chain %d", addr, c.ChainID)
-			continue
-		} else {
-			var p atomic.Uint64
-			p.Swap(delayPeriod.Uint64())
-			dal.DelayPeriods[c.ChainID][addr] = &p
-			log.Debugf("delay period in %x on chain %d is %d", addr, c.ChainID, p.Load())
-		}
-		// monitor
-		addrConfig := mon2.PerAddrCfg{
-			Addr:    addr,
-			ChkIntv: 1 * time.Minute,
-			AbiStr:  bindings.MessageReceiverAdapterABI,
-		}
-		log.Infof("monitoring MessageReceiverAdapter %x on chain %d", addr, c.ChainID)
-		db := dal.GetDB()
-		go c.monitor2.MonAddr(addrConfig, func(evName string, eLog ethtypes.Log) {
-			switch evName {
-			case "DelayedMessageAdded":
-				e, err := adapter.ParseDelayedMessageAdded(eLog)
-				if err != nil {
-					log.Errorln("cannot parse event DelayedMessageAdded", err)
-					return
-				}
-				log.Infof("monitorMsgRecvAdapters: %s", e.PrettyLog(c.ChainID))
-				// find corresponding msgId
-				record, err := db.GetExecutionRecord(&dal.ExecutionRecordQuery{
-					DstTx: eLog.TxHash.String(),
-				})
-				msgId := eth.ZeroHash
-				if err != nil {
-					log.Debugln("cannot find corresponding msgId", err)
-				} else {
-					msgId = record.ID
-				}
-				log.Infof("delayed message, delayId %x, msgId %x", e.Id, msgId)
-				until := time.Now().Add(time.Duration(dal.DelayPeriods[c.ChainID][addr].Load()) * time.Second)
-				err = db.InsertDelayedMessage(e.Id, msgId, e.SrcContract, addr, e.DstContract, e.SrcChainId, c.ChainID, e.CallData, e.Nonce, until, eLog.TxHash)
-				if err != nil {
-					log.Errorf("failed to insert delayed message delayTx %x: %v", eLog.TxHash, err)
-				}
-			case "DelayedMessageExecuted":
-				e, err := adapter.ParseDelayedMessageExecuted(eLog)
-				if err != nil {
-					log.Errorln("cannot parse event DelayedMessageExecuted", err)
-					return
-				}
-				log.Infof("monitorMsgRecvAdapters: %s", e.PrettyLog(c.ChainID))
-				err = db.UpdateDelayStatus(e.Id, types.ExecutionStatus_Delay_Executed)
-				if err != nil {
-					log.Errorf("failed to update delayed message status executeTx %x: %v", eLog.TxHash, err)
-				}
-			case "DelayPeriodUpdated":
-				e, err := adapter.ParseDelayPeriodUpdated(eLog)
-				if err != nil {
-					log.Errorln("cannot parse event DelayPeriodUpdated", err)
-					return
-				}
-				log.Infof("monitorMsgRecvAdapters: %s", e.PrettyLog(c.ChainID))
-				dal.DelayPeriods[c.ChainID][addr].Swap(e.Period.Uint64())
-				log.Infof("delay period in %x on chain %d changed to %d", addr, c.ChainID, dal.DelayPeriods[c.ChainID][addr].Load())
-			default:
-				return
-			}
-		})
-	}
 }
 
 func (c *Chain) startMonitoringBalance(signers []eth.Addr) {

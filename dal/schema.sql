@@ -65,25 +65,3 @@ CREATE TABLE IF NOT EXISTS monitor_block (
   block_idx INT,
   PRIMARY KEY (chid_addr)
 );
-
-CREATE TABLE IF NOT EXISTS delay_message (
-  -- different with message id
-  delay_id TEXT PRIMARY KEY,
-  msg_id TEXT DEFAULT NULL,
-  -- see dal.ExecutionStatus
-  status INT DEFAULT 10,
-  retry_count INT DEFAULT 0,
-  src_contract TEXT,
-  src_chain_id INT,
-  adapter TEXT,
-  dst_contract TEXT,
-  dst_chain_id INT,
-  calldata BYTES,
-  nonce INT,
-  from_time TIMESTAMPTZ,
-  until TIMESTAMPTZ,
-  delay_tx TEXT DEFAULT NULL,
-  execute_tx TEXT DEFAULT NULL,
-  create_time TIMESTAMPTZ,
-  update_time TIMESTAMPTZ
-);

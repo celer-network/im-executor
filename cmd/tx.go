@@ -144,6 +144,6 @@ func execute(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 	log.Infof("executing message with gas limit %d", gasLimit)
-	x.Execute(x.RecordToExecution([]*models.ExecutionRecord{r}, gasLimit))
+	x.Execute([]*models.ExecutionRecord{r}, gasLimit)
 	return
 }

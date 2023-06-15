@@ -2,9 +2,6 @@ package executor
 
 import (
 	"fmt"
-	"math/big"
-	"time"
-
 	"github.com/celer-network/goutils/log"
 	"github.com/celer-network/im-executor/dal"
 	"github.com/celer-network/im-executor/sgn-v2/eth"
@@ -13,6 +10,7 @@ import (
 	"github.com/celer-network/im-executor/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	"math/big"
 )
 
 func (e *Executor) executeMessage(x *Execution) {
@@ -54,39 +52,6 @@ func (e *Executor) executeMessage(x *Execution) {
 	// 5. handle transaction result
 	log.Infof("executed msg (id %x): txhash %x", id, tx.Hash())
 	db.UpdateTx(id, tx.Hash())
-}
-
-func (e *Executor) executeDelayedMessage(x *Execution) {
-	dm := x.DelayedMessage
-	delayId := dm.DelayId
-
-	// 1. update record status to executing
-	db := dal.GetDB()
-	err := db.UpdateDelayStatus(delayId, types.ExecutionStatus_Delay_Executing)
-	if err != nil {
-		log.Errorln("cannot executeDelayedMessage", err)
-		return
-	}
-
-	// 2. send transaction
-	log.Infof("executing %s", x.DelayedMessage)
-	tx, err := x.Transactor.Transact(
-		newDelayTransactionCallback(delayId, "execute delayed message"),
-		func(transactor bind.ContractTransactor, opts *bind.TransactOpts) (*gethtypes.Transaction, error) {
-			setValue(opts, x.Receiver.PayableValue)
-			method := func() (*gethtypes.Transaction, error) {
-				return x.ExecuteDelayedMessage(opts, dm.Adapter, dm.SrcContract, dm.SrcChainID, dm.DstContract, dm.Calldata, dm.Nonce)
-			}
-			return wrapRevertCheck(opts, method)
-		}, x.GetTxOptions()...)
-	if err != nil {
-		handleExecuteDelayedMessageError(err, delayId, dm.From.Add(time.Duration(dal.DelayPeriods[dm.DstChainID][dm.Adapter].Load())*time.Second))
-		return
-	}
-
-	// 3. handle transaction result
-	log.Infof("executed delayed message (delayId %x): txhash %x", delayId, tx.Hash())
-	db.UpdateDelayExecuteTx(delayId, tx.Hash())
 }
 
 func (e *Executor) executeMessageWithTransfer(x *Execution) {
