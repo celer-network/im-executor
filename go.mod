@@ -14,7 +14,7 @@ require (
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
-	golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	google.golang.org/genproto v0.0.0-20220719170305-83ca9fad585f
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0

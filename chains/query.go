@@ -24,6 +24,9 @@ func (c *Chain) IsTransferReady(transferId eth.Hash, transferType msgtypes.Trans
 	case msgtypes.TRANSFER_TYPE_LIQUIDITY_RELAY:
 		ready, err = c.LiqBridge.Transfers(nil, transferId)
 		d = c.LiqBridge
+	case msgtypes.TRANSFER_TYPE_LIQUIDITY_WITHDRAW:
+		ready, err = c.LiqBridge.Withdraws(nil, transferId)
+		d = c.LiqBridge
 	case msgtypes.TRANSFER_TYPE_PEG_MINT:
 		ready, err = c.PegBridge.Records(nil, transferId)
 		d = c.PegBridge

@@ -53,7 +53,7 @@ type ExecutionRecordsQuery struct {
 func (db *DB) GetExecutionRecords(q *ExecutionRecordsQuery) ([]*models.ExecutionRecord, error) {
 	where := &WhereBuilder{}
 	if len(q.SrcTx) > 0 {
-		where.And("tx = '%s'", q.SrcTx)
+		where.And("src_tx = '%s'", q.SrcTx)
 	}
 	if len(q.Statuses) > 0 {
 		intStrs := []string{}
@@ -186,6 +186,16 @@ func (db *DB) UpdateStatus(id []byte, status types.ExecutionStatus) error {
 	}
 	log.Infof("execution_context (id %x) status changed from %s to %s", id, types.ExecutionStatus(oldStatus), status)
 	return nil
+}
+
+func (db *DB) UpdateExecCtx(id []byte, execCtx *msgtypes.ExecutionContext) error {
+	execCtxBytes, err := execCtx.Marshal()
+	if err != nil {
+		return err
+	}
+	q := `UPDATE execution_context SET exec_ctx = $2, update_time = now() WHERE id = $1`
+	_, err = db.Exec(q, id, execCtxBytes)
+	return err
 }
 
 func (db *DB) RevertStatus(id []byte, status types.ExecutionStatus) error {

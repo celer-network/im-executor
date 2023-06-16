@@ -8,7 +8,6 @@ import (
 	"github.com/celer-network/im-executor/accounts"
 	"github.com/celer-network/im-executor/chains"
 	"github.com/celer-network/im-executor/contracts"
-	"github.com/celer-network/im-executor/dal"
 	"github.com/celer-network/im-executor/dal/models"
 	"github.com/celer-network/im-executor/sgn-v2/eth"
 	"github.com/celer-network/im-executor/types"
@@ -19,11 +18,10 @@ import (
 // Execution is a context object that is assembled before the execution of a message so that later steps of the execution
 // don't need to acquire the relavant dependencies over and over.
 type Execution struct {
-	Chain          *chains.Chain
-	Transactor     *ethutils.Transactor
-	Receiver       *contracts.ReceiverContract
-	Record         *models.ExecutionRecord
-	DelayedMessage *dal.DelayedMessage
+	Chain      *chains.Chain
+	Transactor *ethutils.Transactor
+	Receiver   *contracts.ReceiverContract
+	Record     *models.ExecutionRecord
 	// Gas limit override. Useful for force sending out a tx and debugging in Tenderly
 	GasLimit uint64
 }
@@ -75,12 +73,4 @@ func (x *Execution) ExecuteMessage(opts *bind.TransactOpts, msg []byte, route ty
 		SrcTxHash:  eth.Hex2Hash(route.SrcTxHash),
 	}
 	return x.Chain.MessageBus.ExecuteMessage(opts, msg, routeInfo, sortedSigs, signers, powers)
-}
-
-func (x *Execution) ExecuteDelayedMessage(opts *bind.TransactOpts, adapterAddr, srcContract eth.Addr, srcChainId uint64, dstContract eth.Addr, calldata []byte, nonce uint32) (*gethtypes.Transaction, error) {
-	adapter, ok := x.Chain.Contracts.MsgRecvAdapters[adapterAddr]
-	if !ok {
-		return nil, fmt.Errorf("%x not configurred in adapters of chain %d", adapterAddr, x.Chain.ChainID)
-	}
-	return adapter.ExecuteDelayedMessage(opts, srcContract, srcChainId, dstContract, calldata, nonce)
 }
