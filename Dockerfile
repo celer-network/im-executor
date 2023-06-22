@@ -7,10 +7,10 @@ ARG GH_TOKEN
 RUN git config --global url."https://$GH_TOKEN:@github.com/".insteadOf "https://github.com/"
 
 WORKDIR /im-executor
-ADD go.mod go.sum /im-executor/
-RUN go mod download
-
 ADD . /im-executor
+RUN go mod download
+RUN go mod tidy
+
 RUN go build -o /im-executor/bin/executor ./cmd/main
 
 FROM alpine:latest
